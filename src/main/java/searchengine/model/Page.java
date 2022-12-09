@@ -1,13 +1,17 @@
 package searchengine.model;
 
 import com.sun.istack.NotNull;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
-import javax.persistence.Index;
-import java.util.List;
 
 @Entity
 @Table(name = "page",indexes = {@Index(name = "path_index",columnList = "path")})
+@NoArgsConstructor
+@Setter
+@Getter
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,5 +29,5 @@ public class Page {
     private String content;
     @ManyToOne
     @JoinColumn(name = "site_id",nullable = false,insertable = false,updatable = false)
-    private Site site;
+    private SitePage sitePage;
 }

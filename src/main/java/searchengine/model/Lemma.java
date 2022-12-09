@@ -1,12 +1,17 @@
 package searchengine.model;
 
 import com.sun.istack.NotNull;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.List;
 
 @Entity
 @Table(name = "lemma")
+@NoArgsConstructor
+@Setter
+@Getter
 public class Lemma {
     @Id
     @NotNull
@@ -22,8 +27,6 @@ public class Lemma {
     private int frequency;
     @ManyToOne
     @JoinColumn(name = "site_id",insertable = false,updatable = false,nullable = false)
-    private Site site;
-//    @OneToMany
-//    @JoinColumn(name = "lemma_id")
-//    private List<IndexSearch> indices;
+    private SitePage sitePage;
+
 }

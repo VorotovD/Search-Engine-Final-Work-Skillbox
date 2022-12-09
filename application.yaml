@@ -11,10 +11,13 @@ spring:
 
 indexing-settings:
   sites:
-    - url: http://www.playback.ru
     - url: https://www.lenta.ru
       name: Лента.ру
     - url: https://www.skillbox.ru
       name: Skillbox
     - url: https://www.playback.ru
       name: PlayBack.Ru
+
+connection-settings:
+  userAgent: Mozilla/5.0 (X11; Fedora;Linux x86; rv:60.0) Gecko/20100101 Firefox/60.0
+  referer: https://www.google.com

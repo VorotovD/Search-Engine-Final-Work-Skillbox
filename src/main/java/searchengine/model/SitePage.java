@@ -1,7 +1,9 @@
 package searchengine.model;
 
 import com.sun.istack.NotNull;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -9,8 +11,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "site")
-@Data
-public class Site {
+@NoArgsConstructor
+@Setter
+@Getter
+public class SitePage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @NotNull
@@ -28,12 +32,12 @@ public class Site {
     @NotNull
     @Column(columnDefinition = "VARCHAR(255)")
     private String name;
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "site_id")
+    private List<Page> pages;
     @OneToMany
     @JoinColumn(name = "site_id")
-    List<Page> pages;
-    @OneToMany
-    @JoinColumn(name = "site_id")
-    List<Lemma> lemmas;
+    private List<Lemma> lemmas;
 
 
 }

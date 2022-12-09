@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -8,6 +8,7 @@ import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
+import searchengine.services.StatisticsService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,12 +17,16 @@ import java.util.Random;
 @Service
 @RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
-
-    private final Random random = new Random();
     private final SitesList sites;
-
+    Random random = new Random();
     @Override
     public StatisticsResponse getStatistics() {
+
+
+
+
+
+
         String[] statuses = { "INDEXED", "FAILED", "INDEXING" };
         String[] errors = {
                 "Ошибка индексации: главная страница сайта не доступна",
@@ -61,4 +66,5 @@ public class StatisticsServiceImpl implements StatisticsService {
         response.setResult(true);
         return response;
     }
+
 }
