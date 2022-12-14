@@ -38,6 +38,4 @@ public class SitePage {
     @OneToMany
     @JoinColumn(name = "site_id")
     private List<Lemma> lemmas;
-
-
 }
