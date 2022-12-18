@@ -3,8 +3,6 @@ package searchengine.services.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import searchengine.config.Connection;
 import searchengine.config.Site;
@@ -16,10 +14,12 @@ import searchengine.model.repository.PageRepository;
 import searchengine.model.repository.SiteRepository;
 import searchengine.services.IndexingService;
 
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
@@ -31,22 +31,20 @@ public class IndexingServiceImpl implements IndexingService {
     private final Set<SitePage> sitePagesAllFromDB;
     private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(IndexingServiceImpl.class);
+    private AtomicBoolean indexingProcessing;
+
+
 
     @Override
-    public ResponseEntity startIndexing() {
-        ResponseEntity responseResult = ResponseEntity.status(HttpStatus.OK).body("\n'result' : true");
+    public void startIndexing(AtomicBoolean indexingProcessing) {
+        this.indexingProcessing = indexingProcessing;
         try {
             deleteSitesAndPagesInDB();
             addSitePagesToDB();
             indexAllSitePages();
-            //indexSitePage(siteApp.getUrl());
-        } catch (RuntimeException ex) {
+        } catch (RuntimeException | InterruptedException ex) {
             logger.error("Error: ", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex);
         }
-
-
-        return responseResult;
     }
 
     private void deleteSitesAndPagesInDB() {
@@ -71,7 +69,7 @@ public class IndexingServiceImpl implements IndexingService {
 
     }
 
-    private void indexAllSitePages() {
+    private void indexAllSitePages() throws InterruptedException {
         sitePagesAllFromDB.addAll(siteRepository.findAll());
         List<String> urlToIndexing = new ArrayList<>();
         for (Site siteApp : sitesToIndexing.getSites()) {
@@ -79,30 +77,39 @@ public class IndexingServiceImpl implements IndexingService {
         }
         sitePagesAllFromDB.removeIf(sitePage -> !urlToIndexing.contains(sitePage.getUrl()));
 
+        List<Thread> indexingThreadList = new ArrayList<>();
+        for (SitePage siteDomain :sitePagesAllFromDB) {
+            Runnable indexSite = () -> {
+                ConcurrentHashMap<String, Page> resultForkJoinPageIndexer = new ConcurrentHashMap<>();
+                try {
+                    System.out.println("Запущена индексация "+siteDomain.getUrl());
+                    new ForkJoinPool().invoke(new PageIndexer(siteRepository,pageRepository,siteDomain, "", resultForkJoinPageIndexer, connection,indexingProcessing));
+                } catch (SecurityException ex) {
+                    SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
+                    sitePage.setStatus(Status.FAILED);
+                    sitePage.setLastError(ex.getMessage());
+                    siteRepository.save(sitePage);
+                }
+                if (!indexingProcessing.get()) {
+                    SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
+                    sitePage.setStatus(Status.FAILED);
+                    sitePage.setLastError("Indexing stopped by user");
+                    siteRepository.save(sitePage);
+                } else {
+                    System.out.println("Проиндексирован сайт: " + siteDomain.getName());
+                    SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
+                    sitePage.setStatus(Status.INDEXED);
+                    siteRepository.save(sitePage);
+                }
 
-        for (SitePage site : sitePagesAllFromDB) {
-            Map<String, Page> indexedPages = indexSitePage(site.getUrl());
-            System.out.println("Проиндексирован сайт: " + site.getName());
-            SitePage sitePage = siteRepository.findById(site.getId()).orElseThrow();
-            addPagesToDB(sitePage, indexedPages);
-            sitePage = siteRepository.findById(site.getId()).orElseThrow();
-            sitePage.setStatus(Status.INDEXED);
-            siteRepository.save(sitePage);
+            };
+            Thread thread = new Thread(indexSite);
+            indexingThreadList.add(thread);
+            thread.start();
         }
-    }
-
-    private void addPagesToDB(SitePage sitePage, Map<String, Page> indexedPages) {
-        for (Page page : indexedPages.values()) {
-            page.setSiteId(sitePage.getId());
-            pageRepository.save(page);
-
-            sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
-            siteRepository.save(sitePage);
+        for (Thread thread :indexingThreadList) {
+            thread.join();
         }
-    }
-
-    private Map<String, Page> indexSitePage(String domain) {
-        Map<String, Page> resultSet = new HashMap<>();
-        return new ForkJoinPool().invoke(new PageIndexer(domain, "/", resultSet, connection));
+        indexingProcessing.set(false);
     }
 }

@@ -1,74 +1,95 @@
 package searchengine.services.impl;
 
-import lombok.SneakyThrows;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import searchengine.config.Connection;
 import searchengine.model.Page;
+import searchengine.model.SitePage;
+import searchengine.model.repository.PageRepository;
+import searchengine.model.repository.SiteRepository;
 
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class PageIndexer extends RecursiveTask<Map<String, Page>> {
+public class PageIndexer extends RecursiveAction {
+    private final SiteRepository siteRepository;
+    private final PageRepository pageRepository;
+    private final AtomicBoolean indexingProcessing;
     private final Connection connection;
-    private final String domain;
     private final Set<String> urlSet = new HashSet<>();
-    private final String site;
-    private final Map<String, Page> resultForkJoinPoolIndexedPages;
+    private final String page;
+    private final SitePage siteDomain;
+    private final ConcurrentHashMap<String, Page> resultForkJoinPoolIndexedPages;
 
-    public PageIndexer(String domain, String site, Map<String, Page> resultForkJoinPoolIndexedPages, Connection connection) {
-        this.domain = domain;
-        this.site = site;
+    public PageIndexer(SiteRepository siteRepository, PageRepository pageRepository, SitePage siteDomain, String page, ConcurrentHashMap<String, Page> resultForkJoinPoolIndexedPages, Connection connection, AtomicBoolean indexingProcessing) {
+        this.siteRepository = siteRepository;
+        this.pageRepository = pageRepository;
+        this.page = page;
         this.resultForkJoinPoolIndexedPages = resultForkJoinPoolIndexedPages;
         this.connection = connection;
+        this.indexingProcessing = indexingProcessing;
+        this.siteDomain = siteDomain;
     }
 
-    @SneakyThrows
     @Override
-    protected Map<String, Page> compute() {
-        //Если блокирует доступ к страницам - использовать ->
-        //Thread.sleep(1000);
-        Page indexingPage = new Page();
-        indexingPage.setPath(site);
-        if (resultForkJoinPoolIndexedPages.get(site) != null) {
-            return resultForkJoinPoolIndexedPages;
+    protected void compute() {
+
+        if (resultForkJoinPoolIndexedPages.get(page) != null || !indexingProcessing.get()) {
+            return;
         }
+        Page indexingPage = new Page();
+        indexingPage.setPath(page);
+        indexingPage.setSiteId(siteDomain.getId());
+        //Если блочат подключение, используй ->
+        //Thread.sleep(1000);
         try {
-            org.jsoup.Connection connect = Jsoup.connect(domain).userAgent(connection.getUserAgent()).referrer(connection.getReferer());
-            Document doc = connect.timeout(10000).get();
-            indexingPage.setContent(String.valueOf(doc.body()));
+            org.jsoup.Connection connect = Jsoup.connect(siteDomain.getUrl()+page).userAgent(connection.getUserAgent()).referrer(connection.getReferer());
+            Document doc = connect.timeout(60000).get();
+
+            indexingPage.setContent(doc.head() + String.valueOf(doc.body()));
             Elements pages = doc.getElementsByTag("a");
-            pages.forEach(page -> {
-                if (!page.attr("href").isEmpty() && page.attr("href").charAt(0) == '/') {
-                    if (resultForkJoinPoolIndexedPages.get(page.attr("href")) == null) {
-                        urlSet.add(page.attr("href"));
+            for (org.jsoup.nodes.Element element : pages)
+                if (!element.attr("href").isEmpty() && element.attr("href").charAt(0) == '/') {
+                    if (resultForkJoinPoolIndexedPages.get(page) != null || !indexingProcessing.get()) {
+                        return;
+                    } else if (resultForkJoinPoolIndexedPages.get(element.attr("href")) == null) {
+                        urlSet.add(element.attr("href"));
                     }
                 }
-            });
             indexingPage.setCode(doc.connection().response().statusCode());
         } catch (IOException ex) {
             indexingPage.setCode(522);
-            System.out.println("Catch exception");
+            System.out.println("Catch exception: " + ex.getMessage());
         }
-
+        if (resultForkJoinPoolIndexedPages.get(page) != null || !indexingProcessing.get()) {
+            return;
+        }
         resultForkJoinPoolIndexedPages.putIfAbsent(indexingPage.getPath(), indexingPage);
-
+        SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
+        sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
+        siteRepository.save(sitePage);
+        pageRepository.save(indexingPage);
 
         List<PageIndexer> indexingPagesTasks = new ArrayList<>();
         for (String url : urlSet) {
-            if (resultForkJoinPoolIndexedPages.get(url) == null) {
-                PageIndexer task = new PageIndexer(domain, url, resultForkJoinPoolIndexedPages, connection);
+            if (resultForkJoinPoolIndexedPages.get(url) == null && indexingProcessing.get()) {
+                PageIndexer task = new PageIndexer(siteRepository,pageRepository,sitePage,url,resultForkJoinPoolIndexedPages,connection,indexingProcessing);
                 task.fork();
                 indexingPagesTasks.add(task);
             }
         }
         for (PageIndexer page : indexingPagesTasks) {
+            if (!indexingProcessing.get()) {
+                return ;
+            }
             page.join();
         }
-
-        return resultForkJoinPoolIndexedPages;
     }
-}
 
+}

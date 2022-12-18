@@ -5,18 +5,22 @@ spring:
     username: root
     password: 5611
   jpa:
-    hibernate.ddl-auto: update
+    hibernate.ddl-auto: create-drop
     generate-ddl: true
     show-sql: true
 
 indexing-settings:
   sites:
-    - url: https://www.lenta.ru
-      name: Лента.ру
+#    - url: https://www.lenta.ru
+#      name: Лента.ру
+    - url: http://radiomv.ru
+      name: radiomv
     - url: https://www.playback.ru
       name: PlayBack.Ru
 #    - url: https://www.skillbox.ru
 #      name: Skillbox
+#    - url: https://www.lentaerrorurl.ru
+#      name: LentaError
 
 connection-settings:
   userAgent: Mozilla/5.0 (X11; Fedora;Linux x86; rv:60.0) Gecko/20100101 Firefox/60.0
