@@ -9,10 +9,12 @@ import searchengine.model.SitePage;
 import searchengine.model.repository.PageRepository;
 import searchengine.model.repository.SiteRepository;
 
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,9 +65,31 @@ public class PageIndexer extends RecursiveAction {
                     }
                 }
             indexingPage.setCode(doc.connection().response().statusCode());
-        } catch (IOException ex) {
-            indexingPage.setCode(522);
-            System.out.println("Catch exception: " + ex.getMessage());
+        } catch (Exception ex) {
+            String message = ex.toString();
+            int errorCode;
+            if (message.contains("UnsupportedMimeTypeException")) {
+                errorCode = 415;    // Ссылка на pdf, jpg, png документы
+            } else if (message.contains("Status=401")) {
+                errorCode = 401;    // На несуществующий домен
+            } else if (message.contains("UnknownHostException")) {
+                errorCode = 401;
+            } else if (message.contains("Status=403")) {
+                errorCode = 403;    // Нет доступа, 403 Forbidden
+            } else if (message.contains("Status=404")) {
+                errorCode = 404;    // // Ссылка на pdf-документ, несущ. страница, проигрыватель
+            } else if (message.contains("Status=500")) {
+                errorCode = 401;    // Страница авторизации
+            } else if (message.contains("ConnectException: Connection refused")) {
+                errorCode = 500;    // ERR_CONNECTION_REFUSED, не удаётся открыть страницу
+            } else if (message.contains("SSLHandshakeException")) {
+                errorCode = 525;
+            } else if (message.contains("Status=503")) {
+                errorCode = 503; // Сервер временно не имеет возможности обрабатывать запросы по техническим причинам (обслуживание, перегрузка и прочее).
+            }else {
+                errorCode = -1;
+            }
+            indexingPage.setCode(errorCode);
         }
         if (resultForkJoinPoolIndexedPages.get(page) != null || !indexingProcessing.get()) {
             return;
@@ -90,6 +114,7 @@ public class PageIndexer extends RecursiveAction {
             }
             page.join();
         }
+
     }
 
 }

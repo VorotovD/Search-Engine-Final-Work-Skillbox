@@ -39,7 +39,7 @@ public class IndexingServiceImpl implements IndexingService {
     public void startIndexing(AtomicBoolean indexingProcessing) {
         this.indexingProcessing = indexingProcessing;
         try {
-            deleteSitesAndPagesInDB();
+            deleteSitePagesAndPagesInDB();
             addSitePagesToDB();
             indexAllSitePages();
         } catch (RuntimeException | InterruptedException ex) {
@@ -47,7 +47,7 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
-    private void deleteSitesAndPagesInDB() {
+    private void deleteSitePagesAndPagesInDB() {
         List<SitePage> sitesFromDB = siteRepository.findAll();
         for (SitePage sitePageDb : sitesFromDB) {
             for (Site siteApp : sitesToIndexing.getSites()) {

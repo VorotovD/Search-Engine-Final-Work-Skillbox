@@ -32,7 +32,7 @@ public class ApiController {
     @GetMapping("/startIndexing")
     public ResponseEntity startIndexing() {
         if(indexingProcessing.get()) {
-            return ResponseEntity.status(HttpStatus.PROCESSING).body("'result' : false, " +
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("'result' : false, " +
                     "'error' : Индексация уже запущена");
         } else {
             indexingProcessing.set(true);
