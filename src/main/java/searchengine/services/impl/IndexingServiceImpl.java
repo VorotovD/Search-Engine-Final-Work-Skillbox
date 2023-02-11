@@ -10,8 +10,8 @@ import searchengine.config.SitesList;
 import searchengine.model.Page;
 import searchengine.model.SitePage;
 import searchengine.model.Status;
-import searchengine.model.repository.PageRepository;
-import searchengine.model.repository.SiteRepository;
+import searchengine.repository.PageRepository;
+import searchengine.repository.SiteRepository;
 import searchengine.services.IndexingService;
 
 import java.util.ArrayList;
