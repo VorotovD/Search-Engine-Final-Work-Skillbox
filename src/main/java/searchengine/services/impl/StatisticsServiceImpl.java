@@ -44,7 +44,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             Site site = sitesList.get(i);
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName());
-            item.setUrl(site.getUrl());
+            item.setUrl(site.getUrl().toString());
             int pages = random.nextInt(1_000);
             int lemmas = pages * random.nextInt(1_000);
             item.setPages(pages);

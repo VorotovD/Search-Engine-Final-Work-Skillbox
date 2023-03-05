@@ -3,6 +3,7 @@ package searchengine.services.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.Connection;
 import searchengine.config.Site;
@@ -12,7 +13,9 @@ import searchengine.model.SitePage;
 import searchengine.model.Status;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.services.IndexingService;
+import searchengine.services.ApiService;
+import searchengine.services.LemmaService;
+import searchengine.services.PageIndexer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,13 +27,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 @RequiredArgsConstructor
 
-public class IndexingServiceImpl implements IndexingService {
+public class ApiServiceImpl implements ApiService {
+    @Autowired
+    private PageIndexer pageIndexer;
+    @Autowired
+    private LemmaService lemmaService;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final SitesList sitesToIndexing;
     private final Set<SitePage> sitePagesAllFromDB;
     private final Connection connection;
-    private static final Logger logger = LoggerFactory.getLogger(IndexingServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ApiServiceImpl.class);
     private AtomicBoolean indexingProcessing;
 
 
@@ -63,7 +70,7 @@ public class IndexingServiceImpl implements IndexingService {
             SitePage sitePageDAO = new SitePage();
             sitePageDAO.setStatus(Status.INDEXING);
             sitePageDAO.setName(siteApp.getName());
-            sitePageDAO.setUrl(siteApp.getUrl());
+            sitePageDAO.setUrl(siteApp.getUrl().toString());
             siteRepository.save(sitePageDAO);
         }
 
@@ -73,7 +80,7 @@ public class IndexingServiceImpl implements IndexingService {
         sitePagesAllFromDB.addAll(siteRepository.findAll());
         List<String> urlToIndexing = new ArrayList<>();
         for (Site siteApp : sitesToIndexing.getSites()) {
-            urlToIndexing.add(siteApp.getUrl());
+            urlToIndexing.add(siteApp.getUrl().toString());
         }
         sitePagesAllFromDB.removeIf(sitePage -> !urlToIndexing.contains(sitePage.getUrl()));
 
@@ -83,7 +90,7 @@ public class IndexingServiceImpl implements IndexingService {
                 ConcurrentHashMap<String, Page> resultForkJoinPageIndexer = new ConcurrentHashMap<>();
                 try {
                     System.out.println("Запущена индексация "+siteDomain.getUrl());
-                    new ForkJoinPool().invoke(new PageIndexer(siteRepository,pageRepository,siteDomain, "", resultForkJoinPageIndexer, connection,indexingProcessing));
+                    new ForkJoinPool().invoke(new PageFinder(siteRepository,pageRepository,siteDomain, "", resultForkJoinPageIndexer, connection,lemmaService,pageIndexer,indexingProcessing));
                 } catch (SecurityException ex) {
                     SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
                     sitePage.setStatus(Status.FAILED);

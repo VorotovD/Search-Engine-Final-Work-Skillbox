@@ -1,29 +1,32 @@
 package searchengine.controllers;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import searchengine.config.SitesList;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.services.IndexingService;
+import searchengine.services.ApiService;
+import searchengine.services.LemmaService;
 import searchengine.services.StatisticsService;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class ApiController {
 
     private final StatisticsService statisticsService;
-    private final IndexingService indexingService;
-    private final AtomicBoolean indexingProcessing = new AtomicBoolean();
-
-    public ApiController(StatisticsService statisticsService, IndexingService indexingService) {
-        this.statisticsService = statisticsService;
-        this.indexingService = indexingService;
-        indexingProcessing.set(false);
-    }
+    private final ApiService apiService;
+    private final LemmaService lemmaService;
+    private final AtomicBoolean indexingProcessing = new AtomicBoolean(false);
+    private final SitesList sitesList;
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> statistics() {
@@ -36,7 +39,7 @@ public class ApiController {
                     "'error' : Индексация уже запущена");
         } else {
             indexingProcessing.set(true);
-            Runnable start = () -> indexingService.startIndexing(indexingProcessing);
+            Runnable start = () -> apiService.startIndexing(indexingProcessing);
             new Thread(start).start();
             return ResponseEntity.status(HttpStatus.OK).body("'result' : true");
         }
@@ -51,5 +54,19 @@ public class ApiController {
             indexingProcessing.set(false);
             return ResponseEntity.status(HttpStatus.OK).body("'result' : true ");
         }
+    }
+
+    @GetMapping("/indexPage")
+    public ResponseEntity indexPage(@RequestParam URL url) throws IOException {
+
+        try {
+            sitesList.getSites().stream().filter(site -> url.getHost().equals(site.getUrl().getHost())).findFirst().orElseThrow();
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("result: false " +
+                    "error: Данная страница находится за пределами сайтов " +
+                    "указанных в конфигурационном файле");
+        }
+        lemmaService.getLemmasFromUrl(url);
+        return ResponseEntity.status(HttpStatus.OK).body("result: true");
     }
 }

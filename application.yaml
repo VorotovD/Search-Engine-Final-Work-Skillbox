@@ -11,15 +11,15 @@ spring:
 
 indexing-settings:
   sites:
-#    - url: https://www.lenta.ru
+#    - url: https://lenta.ru
 #      name: Лента.ру
     - url: http://radiomv.ru
       name: radiomv
-    - url: https://www.playback.ru
+    - url: https://playback.ru
       name: PlayBack.Ru
-#    - url: https://www.skillbox.ru
+#    - url: https://skillbox.ru
 #      name: Skillbox
-#    - url: https://www.lentaerrorurl.ru
+#    - url: https://lentaerrorurl.ru
 #      name: LentaError
 
 connection-settings:
