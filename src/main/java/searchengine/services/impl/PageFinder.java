@@ -96,6 +96,7 @@ public class PageFinder extends RecursiveAction {
                 errorCode = -1;
             }
             indexingPage.setCode(errorCode);
+            return;
         }
         if (resultForkJoinPoolIndexedPages.get(page) != null || !indexingProcessing.get()) {
             return;
