@@ -33,7 +33,7 @@ public class LemmaServiceImpl implements LemmaService {
 
     private void determineLemma(String word, LuceneMorphology luceneMorphology) {
         try{
-            if (String.valueOf(word.charAt(0)).matches("[a-z]") || String.valueOf(word.charAt(0)).matches("[0-9]")) {
+            if (word.isEmpty() || String.valueOf(word.charAt(0)).matches("[a-z]") || String.valueOf(word.charAt(0)).matches("[0-9]")) {
                 return;
             }
             List<String> normalWordForms = luceneMorphology.getNormalForms(word);
@@ -49,7 +49,8 @@ public class LemmaServiceImpl implements LemmaService {
                 }
             });
         } catch (RuntimeException ex) {
-            logger.error(ex.getMessage());
+            //todo раскоментировать для получения информации о немечатных символах
+            //logger.debug(ex.getMessage());
         }
 
     }

@@ -8,6 +8,8 @@ import searchengine.model.Page;
 import searchengine.model.SitePage;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
+import searchengine.services.LemmaService;
+import searchengine.services.PageIndexer;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -19,7 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class PageIndexer extends RecursiveAction {
+public class PageFinder extends RecursiveAction {
+    private final PageIndexer pageIndexer;
+    private final LemmaService lemmaService;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final AtomicBoolean indexingProcessing;
@@ -29,7 +33,7 @@ public class PageIndexer extends RecursiveAction {
     private final SitePage siteDomain;
     private final ConcurrentHashMap<String, Page> resultForkJoinPoolIndexedPages;
 
-    public PageIndexer(SiteRepository siteRepository, PageRepository pageRepository, SitePage siteDomain, String page, ConcurrentHashMap<String, Page> resultForkJoinPoolIndexedPages, Connection connection, AtomicBoolean indexingProcessing) {
+    public PageFinder(SiteRepository siteRepository, PageRepository pageRepository, SitePage siteDomain, String page, ConcurrentHashMap<String, Page> resultForkJoinPoolIndexedPages, Connection connection, LemmaService lemmaService,PageIndexer pageIndexer, AtomicBoolean indexingProcessing) {
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.page = page;
@@ -37,6 +41,8 @@ public class PageIndexer extends RecursiveAction {
         this.connection = connection;
         this.indexingProcessing = indexingProcessing;
         this.siteDomain = siteDomain;
+        this.lemmaService = lemmaService;
+        this.pageIndexer = pageIndexer;
     }
 
     @Override
@@ -99,16 +105,16 @@ public class PageIndexer extends RecursiveAction {
         sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
         siteRepository.save(sitePage);
         pageRepository.save(indexingPage);
-
-        List<PageIndexer> indexingPagesTasks = new ArrayList<>();
+        pageIndexer.indexHtml(indexingPage.getContent(),indexingPage);
+        List<PageFinder> indexingPagesTasks = new ArrayList<>();
         for (String url : urlSet) {
             if (resultForkJoinPoolIndexedPages.get(url) == null && indexingProcessing.get()) {
-                PageIndexer task = new PageIndexer(siteRepository,pageRepository,sitePage,url,resultForkJoinPoolIndexedPages,connection,indexingProcessing);
+                PageFinder task = new PageFinder(siteRepository,pageRepository,sitePage,url,resultForkJoinPoolIndexedPages,connection,lemmaService,pageIndexer, indexingProcessing);
                 task.fork();
                 indexingPagesTasks.add(task);
             }
         }
-        for (PageIndexer page : indexingPagesTasks) {
+        for (PageFinder page : indexingPagesTasks) {
             if (!indexingProcessing.get()) {
                 return ;
             }
