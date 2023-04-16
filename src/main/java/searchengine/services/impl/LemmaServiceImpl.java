@@ -18,20 +18,19 @@ import java.util.Map;
 
 @Service
 public class LemmaServiceImpl implements LemmaService {
-    //TODO не понятно что будет при многопоточности, будут ли путаться мапы
-    private final Map<String, Integer> lemmasInText = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(LemmaServiceImpl.class);
 
     @Override
     public Map<String, Integer> getLemmasFromText(String html) throws IOException {
+        Map<String, Integer> lemmasInText = new HashMap<>();
         LuceneMorphology luceneMorph = new RussianLuceneMorphology();
         String text = Jsoup.parse(html).text();
         List<String> words = new ArrayList<>(List.of(text.replaceAll("(?U)\\pP","").toLowerCase().split(" ")));
-        words.forEach(w -> determineLemma(w, luceneMorph));
+        words.forEach(w -> determineLemma(w, luceneMorph,lemmasInText));
         return lemmasInText;
     }
 
-    private void determineLemma(String word, LuceneMorphology luceneMorphology) {
+    private void determineLemma(String word, LuceneMorphology luceneMorphology,Map<String,Integer> lemmasInText) {
         try{
             if (word.isEmpty() || String.valueOf(word.charAt(0)).matches("[a-z]") || String.valueOf(word.charAt(0)).matches("[0-9]")) {
                 return;

@@ -8,7 +8,7 @@ import lombok.Setter;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "lemma")
+@Table(name = "lemma",uniqueConstraints = @UniqueConstraint(columnNames = "lemma"))
 @NoArgsConstructor
 @Setter
 @Getter
@@ -18,13 +18,13 @@ public class Lemma {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @NotNull
-    @Column(name = "site_id")
-    private int siteId;
+    private int frequency;
     @NotNull
     @Column(columnDefinition = "VARCHAR(255)")
     private String lemma;
     @NotNull
-    private int frequency;
+    @Column(name = "site_id")
+    private int siteId;
     @ManyToOne
     @JoinColumn(name = "site_id",insertable = false,updatable = false,nullable = false)
     private SitePage sitePage;

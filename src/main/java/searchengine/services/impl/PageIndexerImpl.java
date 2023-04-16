@@ -12,7 +12,6 @@ import searchengine.repository.LemmaRepository;
 import searchengine.services.LemmaService;
 import searchengine.services.PageIndexer;
 
-import java.io.IOException;
 import java.util.Map;
 
 @Service
@@ -40,12 +39,13 @@ public class PageIndexerImpl implements PageIndexer {
                     newLemmaToDB.setLemma(k);
                     newLemmaToDB.setFrequency(v);
                     newLemmaToDB.setSitePage(indexingPage.getSitePage());
+                    //возможна ошибка какая? если есть такая запись отловить
                     lemmaRepository.saveAndFlush(newLemmaToDB);
                     createIndex(indexingPage,newLemmaToDB);
                 }
             });
-        } catch (RuntimeException | IOException ex) {
-            logger.error(String.valueOf(ex));
+        } catch (Exception ex) {
+            logger.error("Ошибка сохранения леммы: ",ex);
         }
     }
 
