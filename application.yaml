@@ -18,8 +18,8 @@ indexing-settings:
       name: radiomv
     - url: https://playback.ru
       name: PlayBack.Ru
-#    - url: https://skillbox.ru
-#      name: Skillbox
+    - url: https://skillbox.ru
+      name: Skillbox
 #    - url: https://lentaerrorurl.ru
 #      name: LentaError
 

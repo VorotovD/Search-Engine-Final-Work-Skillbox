@@ -1,5 +1,7 @@
 package searchengine.services.impl;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -21,6 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@Slf4j
+@AllArgsConstructor
 public class PageFinder extends RecursiveAction {
     private final PageIndexer pageIndexer;
     private final LemmaService lemmaService;

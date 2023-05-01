@@ -1,5 +1,6 @@
 package searchengine.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
@@ -17,8 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class LemmaServiceImpl implements LemmaService {
-    private static final Logger logger = LoggerFactory.getLogger(LemmaServiceImpl.class);
 
     @Override
     public Map<String, Integer> getLemmasFromText(String html) throws IOException {
@@ -48,8 +49,8 @@ public class LemmaServiceImpl implements LemmaService {
                 }
             });
         } catch (RuntimeException ex) {
-            //todo раскоментировать для получения информации о немечатных символах
-            //logger.debug(ex.getMessage());
+            //todo раскоментировать для получения информации о непечатных символах
+            log.debug(ex.getMessage());
         }
 
     }
