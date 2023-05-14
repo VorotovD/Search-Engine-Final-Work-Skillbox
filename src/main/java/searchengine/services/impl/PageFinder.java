@@ -15,10 +15,7 @@ import searchengine.services.PageIndexer;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,7 +34,7 @@ public class PageFinder extends RecursiveAction {
     private final SitePage siteDomain;
     private final ConcurrentHashMap<String, Page> resultForkJoinPoolIndexedPages;
 
-    public PageFinder(SiteRepository siteRepository, PageRepository pageRepository, SitePage siteDomain, String page, ConcurrentHashMap<String, Page> resultForkJoinPoolIndexedPages, Connection connection, LemmaService lemmaService,PageIndexer pageIndexer, AtomicBoolean indexingProcessing) {
+    public PageFinder(SiteRepository siteRepository, PageRepository pageRepository, SitePage siteDomain, String page, ConcurrentHashMap<String, Page> resultForkJoinPoolIndexedPages, Connection connection, LemmaService lemmaService, PageIndexer pageIndexer, AtomicBoolean indexingProcessing) {
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.page = page;
@@ -61,7 +58,7 @@ public class PageFinder extends RecursiveAction {
         //Если блочат подключение, используй ->
         //Thread.sleep(1000);
         try {
-            org.jsoup.Connection connect = Jsoup.connect(siteDomain.getUrl()+page).userAgent(connection.getUserAgent()).referrer(connection.getReferer());
+            org.jsoup.Connection connect = Jsoup.connect(siteDomain.getUrl() + page).userAgent(connection.getUserAgent()).referrer(connection.getReferer());
             Document doc = connect.timeout(60000).get();
 
             indexingPage.setContent(doc.head() + String.valueOf(doc.body()));
@@ -96,7 +93,7 @@ public class PageFinder extends RecursiveAction {
                 errorCode = 525;
             } else if (message.contains("Status=503")) {
                 errorCode = 503; // Сервер временно не имеет возможности обрабатывать запросы по техническим причинам (обслуживание, перегрузка и прочее).
-            }else {
+            } else {
                 errorCode = -1;
             }
             indexingPage.setCode(errorCode);
@@ -110,18 +107,18 @@ public class PageFinder extends RecursiveAction {
         sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
         siteRepository.save(sitePage);
         pageRepository.save(indexingPage);
-        pageIndexer.indexHtml(indexingPage.getContent(),indexingPage);
+        pageIndexer.indexHtml(indexingPage.getContent(), indexingPage);
         List<PageFinder> indexingPagesTasks = new ArrayList<>();
         for (String url : urlSet) {
             if (resultForkJoinPoolIndexedPages.get(url) == null && indexingProcessing.get()) {
-                PageFinder task = new PageFinder(siteRepository,pageRepository,sitePage,url,resultForkJoinPoolIndexedPages,connection,lemmaService,pageIndexer, indexingProcessing);
+                PageFinder task = new PageFinder(siteRepository, pageRepository, sitePage, url, resultForkJoinPoolIndexedPages, connection, lemmaService, pageIndexer, indexingProcessing);
                 task.fork();
                 indexingPagesTasks.add(task);
             }
         }
         for (PageFinder page : indexingPagesTasks) {
             if (!indexingProcessing.get()) {
-                return ;
+                return;
             }
             page.join();
         }

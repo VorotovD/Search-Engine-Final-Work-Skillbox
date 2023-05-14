@@ -5,17 +5,12 @@ import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import searchengine.services.LemmaService;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -43,9 +38,9 @@ public class LemmaServiceImpl implements LemmaService {
             }
             normalWordForms.forEach(w -> {
                 if (!lemmasInText.containsKey(w)) {
-                    lemmasInText.put(w,1);
+                    lemmasInText.put(w, 1);
                 } else {
-                    lemmasInText.replace(w,lemmasInText.get(w) + 1);
+                    lemmasInText.replace(w, lemmasInText.get(w) + 1);
                 }
             });
         } catch (RuntimeException ex) {
