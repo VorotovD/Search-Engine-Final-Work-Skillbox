@@ -4,13 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 import searchengine.services.LemmaService;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -21,7 +22,7 @@ public class LemmaServiceImpl implements LemmaService {
         Map<String, Integer> lemmasInText = new HashMap<>();
         LuceneMorphology luceneMorph = new RussianLuceneMorphology();
         String text = Jsoup.parse(html).text();
-        List<String> words = new ArrayList<>(List.of(text.replaceAll("(?U)\\pP","").toLowerCase().split(" ")));
+        List<String> words = new ArrayList<>(List.of(text.toLowerCase().split("[^a-zа-я]+")));
         words.forEach(w -> determineLemma(w, luceneMorph,lemmasInText));
         return lemmasInText;
     }
@@ -36,26 +37,12 @@ public class LemmaServiceImpl implements LemmaService {
             if (wordInfo.contains("ПРЕДЛ") || wordInfo.contains("СОЮЗ") || wordInfo.contains("МЕЖД")) {
                 return;
             }
-            normalWordForms.forEach(w -> {
-                if (!lemmasInText.containsKey(w)) {
-                    lemmasInText.put(w, 1);
-                } else {
-                    lemmasInText.replace(w, lemmasInText.get(w) + 1);
-                }
-            });
+            String normalWord = normalWordForms.get(0);
+            lemmasInText.put(normalWord,lemmasInText.containsKey(normalWord) ? (lemmasInText.get(normalWord) + 1) : 1);
         } catch (RuntimeException ex) {
             //todo раскоментировать для получения информации о непечатных символах
             log.debug(ex.getMessage());
         }
 
-    }
-
-    @Override
-    public void getLemmasFromUrl(URL url) throws IOException {
-        org.jsoup.Connection connect = Jsoup.connect(String.valueOf(url));
-        Document doc = connect.timeout(60000).get();
-        Map<String,Integer> res = getLemmasFromText(doc.body().html());
-        System.out.println(res.keySet());
-        System.out.println(res.values());
     }
 }

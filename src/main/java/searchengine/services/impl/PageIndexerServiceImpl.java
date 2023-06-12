@@ -11,7 +11,7 @@ import searchengine.model.Page;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.services.LemmaService;
-import searchengine.services.PageIndexer;
+import searchengine.services.PageIndexerService;
 
 import java.io.IOException;
 import java.util.Map;
@@ -19,7 +19,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class PageIndexerImpl implements PageIndexer {
+public class PageIndexerServiceImpl implements PageIndexerService {
     private LemmaService lemmaService;
     private LemmaRepository lemmaRepository;
     private IndexSearchRepository indexSearchRepository;
@@ -35,7 +35,47 @@ public class PageIndexerImpl implements PageIndexer {
             log.error(String.valueOf(e));
             throw new RuntimeException(e);
         }
+    }
 
+    @Override
+    public void refreshIndex(String html, Page refreshPage) {
+        long start = System.currentTimeMillis();
+        try {
+            Map<String, Integer> lemmas = lemmaService.getLemmasFromText(html);
+            lemmas.entrySet().parallelStream().forEach(entry -> refreshLemma(entry.getKey(), entry.getValue(), refreshPage));
+            log.warn("Обновление индекса страницы " + (System.currentTimeMillis() - start) + " lemmas:" + lemmas.size());
+        } catch (IOException e) {
+            log.error(String.valueOf(e));
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Transactional
+    private void refreshLemma(String k, Integer v, Page refreshPage) {
+        Lemma existLemmaInDB = lemmaRepository.lemmaExist(k);
+        if (existLemmaInDB != null) {
+            IndexSearch indexToRefresh = indexSearchRepository.indexSearchExist(refreshPage.getId(), existLemmaInDB.getId());
+            if (indexToRefresh != null) {
+                existLemmaInDB.setFrequency(existLemmaInDB.getFrequency() - indexToRefresh.getLemmaCount());
+                lemmaRepository.saveAndFlush(existLemmaInDB);
+                indexSearchRepository.delete(indexToRefresh);
+                Lemma newLemmaToDB = new Lemma();
+                newLemmaToDB.setSiteId(refreshPage.getSiteId());
+                newLemmaToDB.setLemma(k);
+                newLemmaToDB.setFrequency(v);
+                newLemmaToDB.setSitePage(refreshPage.getSitePage());
+                lemmaRepository.saveAndFlush(newLemmaToDB);
+                createIndex(refreshPage, newLemmaToDB, v);
+                return;
+            }
+        }
+        Lemma newLemmaToDB = new Lemma();
+        newLemmaToDB.setSiteId(refreshPage.getSiteId());
+        newLemmaToDB.setLemma(k);
+        newLemmaToDB.setFrequency(v);
+        newLemmaToDB.setSitePage(refreshPage.getSitePage());
+        lemmaRepository.saveAndFlush(newLemmaToDB);
+        createIndex(refreshPage, newLemmaToDB, v);
     }
 
     @Transactional

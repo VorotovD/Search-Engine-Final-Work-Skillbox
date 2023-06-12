@@ -2,6 +2,8 @@ package searchengine.services;
 
 import searchengine.model.Page;
 
-public interface PageIndexer {
+public interface PageIndexerService {
     void indexHtml(String html, Page indexingPage);
+
+    void refreshIndex(String html, Page refreshPage);
 }

@@ -3,7 +3,6 @@ package searchengine.services.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.Connection;
 import searchengine.config.Site;
@@ -15,8 +14,9 @@ import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 import searchengine.services.ApiService;
 import searchengine.services.LemmaService;
-import searchengine.services.PageIndexer;
+import searchengine.services.PageIndexerService;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -26,12 +26,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
-
 public class ApiServiceImpl implements ApiService {
-    @Autowired
-    private PageIndexer pageIndexer;
-    @Autowired
-    private LemmaService lemmaService;
+    private final PageIndexerService pageIndexerService;
+    private final LemmaService lemmaService;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final SitesList sitesToIndexing;
@@ -39,7 +36,6 @@ public class ApiServiceImpl implements ApiService {
     private final Connection connection;
     private static final Logger logger = LoggerFactory.getLogger(ApiServiceImpl.class);
     private AtomicBoolean indexingProcessing;
-
 
 
     @Override
@@ -52,6 +48,28 @@ public class ApiServiceImpl implements ApiService {
         } catch (RuntimeException | InterruptedException ex) {
             logger.error("Error: ", ex);
         }
+    }
+
+    @Override
+    public void refreshPage(SitePage siteDomain, URL url) {
+        SitePage existSitePate = siteRepository.getSitePageByUrl(siteDomain.getUrl());
+        siteDomain.setId(existSitePate.getId());
+        ConcurrentHashMap<String, Page> resultForkJoinPageIndexer = new ConcurrentHashMap<>();
+        try {
+            System.out.println("Запущена переиндексация " + url.getHost());
+            PageFinder f = new PageFinder(siteRepository, pageRepository, siteDomain, url.getPath(), resultForkJoinPageIndexer, connection, lemmaService, pageIndexerService, indexingProcessing);
+            f.refreshPage();
+        } catch (SecurityException ex) {
+            SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
+            sitePage.setStatus(Status.FAILED);
+            sitePage.setLastError(ex.getMessage());
+            siteRepository.save(sitePage);
+        }
+
+        System.out.println("Проиндексирован сайт: " + siteDomain.getName());
+        SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
+        sitePage.setStatus(Status.INDEXED);
+        siteRepository.save(sitePage);
     }
 
     private void deleteSitePagesAndPagesInDB() {
@@ -85,12 +103,12 @@ public class ApiServiceImpl implements ApiService {
         sitePagesAllFromDB.removeIf(sitePage -> !urlToIndexing.contains(sitePage.getUrl()));
 
         List<Thread> indexingThreadList = new ArrayList<>();
-        for (SitePage siteDomain :sitePagesAllFromDB) {
+        for (SitePage siteDomain : sitePagesAllFromDB) {
             Runnable indexSite = () -> {
                 ConcurrentHashMap<String, Page> resultForkJoinPageIndexer = new ConcurrentHashMap<>();
                 try {
-                    System.out.println("Запущена индексация "+siteDomain.getUrl());
-                    new ForkJoinPool().invoke(new PageFinder(siteRepository,pageRepository,siteDomain, "", resultForkJoinPageIndexer, connection,lemmaService,pageIndexer,indexingProcessing));
+                    System.out.println("Запущена индексация " + siteDomain.getUrl());
+                    new ForkJoinPool().invoke(new PageFinder(siteRepository, pageRepository, siteDomain, "", resultForkJoinPageIndexer, connection, lemmaService, pageIndexerService, indexingProcessing));
                 } catch (SecurityException ex) {
                     SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
                     sitePage.setStatus(Status.FAILED);
@@ -114,7 +132,7 @@ public class ApiServiceImpl implements ApiService {
             indexingThreadList.add(thread);
             thread.start();
         }
-        for (Thread thread :indexingThreadList) {
+        for (Thread thread : indexingThreadList) {
             thread.join();
         }
         indexingProcessing.set(false);

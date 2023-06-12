@@ -24,7 +24,7 @@ public class IndexSearch {
     @Column(name = "lemma_id")
     private int lemmaId;
     @NotNull
-    private float lemmaCount;
+    private int lemmaCount;
     @ManyToOne
     @JoinColumn(name = "page_id",insertable = false,updatable = false,nullable = false)
     private Page page;
