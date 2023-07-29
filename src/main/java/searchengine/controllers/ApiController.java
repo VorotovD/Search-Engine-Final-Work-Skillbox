@@ -11,10 +11,10 @@ import searchengine.config.SitesList;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.SitePage;
 import searchengine.services.ApiService;
-import searchengine.services.LemmaService;
 import searchengine.services.StatisticsService;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -25,12 +25,11 @@ public class ApiController {
 
     private final StatisticsService statisticsService;
     private final ApiService apiService;
-    private final LemmaService lemmaService;
     private final AtomicBoolean indexingProcessing = new AtomicBoolean(false);
     private final SitesList sitesList;
 
     @GetMapping("/statistics")
-    public ResponseEntity<StatisticsResponse> statistics() {
+    public ResponseEntity<StatisticsResponse> statistics() throws MalformedURLException {
         return ResponseEntity.ok(statisticsService.getStatistics());
     }
 
@@ -59,7 +58,7 @@ public class ApiController {
     }
 
     @GetMapping("/indexPage")
-    public ResponseEntity indexPage(@RequestParam String refUrl) throws IOException {
+    public ResponseEntity<String> indexPage(@RequestParam String refUrl) throws IOException {
         URL url = new URL(refUrl);
         SitePage sitePage = new SitePage();
         try {

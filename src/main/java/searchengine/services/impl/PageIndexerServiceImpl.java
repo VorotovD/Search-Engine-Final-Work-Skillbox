@@ -1,6 +1,6 @@
 package searchengine.services.impl;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -18,11 +18,11 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class PageIndexerServiceImpl implements PageIndexerService {
-    private LemmaService lemmaService;
-    private LemmaRepository lemmaRepository;
-    private IndexSearchRepository indexSearchRepository;
+    private final LemmaService lemmaService;
+    private final LemmaRepository lemmaRepository;
+    private final IndexSearchRepository indexSearchRepository;
 
     @Override
     public void indexHtml(String html, Page indexingPage) {
@@ -92,7 +92,6 @@ public class PageIndexerServiceImpl implements PageIndexerService {
                 newLemmaToDB.setLemma(k);
                 newLemmaToDB.setFrequency(v);
                 newLemmaToDB.setSitePage(indexingPage.getSitePage());
-                //todo возможна ошибка какая? если есть такая запись отловить
                 lemmaRepository.saveAndFlush(newLemmaToDB);
                 createIndex(indexingPage, newLemmaToDB, v);
             } catch (DataIntegrityViolationException ex) {

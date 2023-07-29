@@ -23,12 +23,12 @@ public class LemmaServiceImpl implements LemmaService {
         LuceneMorphology luceneMorph = new RussianLuceneMorphology();
         String text = Jsoup.parse(html).text();
         List<String> words = new ArrayList<>(List.of(text.toLowerCase().split("[^a-zа-я]+")));
-        words.forEach(w -> determineLemma(w, luceneMorph,lemmasInText));
+        words.forEach(w -> determineLemma(w, luceneMorph, lemmasInText));
         return lemmasInText;
     }
 
-    private void determineLemma(String word, LuceneMorphology luceneMorphology,Map<String,Integer> lemmasInText) {
-        try{
+    private void determineLemma(String word, LuceneMorphology luceneMorphology, Map<String, Integer> lemmasInText) {
+        try {
             if (word.isEmpty() || String.valueOf(word.charAt(0)).matches("[a-z]") || String.valueOf(word.charAt(0)).matches("[0-9]")) {
                 return;
             }
@@ -38,9 +38,8 @@ public class LemmaServiceImpl implements LemmaService {
                 return;
             }
             String normalWord = normalWordForms.get(0);
-            lemmasInText.put(normalWord,lemmasInText.containsKey(normalWord) ? (lemmasInText.get(normalWord) + 1) : 1);
+            lemmasInText.put(normalWord, lemmasInText.containsKey(normalWord) ? (lemmasInText.get(normalWord) + 1) : 1);
         } catch (RuntimeException ex) {
-            //todo раскоментировать для получения информации о непечатных символах
             log.debug(ex.getMessage());
         }
 

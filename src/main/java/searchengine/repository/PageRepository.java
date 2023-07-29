@@ -8,6 +8,9 @@ import searchengine.model.Page;
 
 @Repository
 public interface PageRepository extends JpaRepository<Page, Integer> {
-    @Query(value = "select * from page t where t.site_id = :siteId and t.path = :path limit 1",nativeQuery = true)
-    Page findPageBySiteIdAndPath(@Param("path") String path,@Param("siteId") Integer siteId);
+    @Query(value = "select * from page t where t.site_id = :siteId and t.path = :path limit 1", nativeQuery = true)
+    Page findPageBySiteIdAndPath(@Param("path") String path, @Param("siteId") Integer siteId);
+
+    @Query(value = "select count(*) from page p where p.site_id = :siteId", nativeQuery = true)
+    Integer findCountRecordBySiteId(@Param("siteId") Integer siteId);
 }

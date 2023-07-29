@@ -26,9 +26,9 @@ public class IndexSearch {
     @NotNull
     private int lemmaCount;
     @ManyToOne
-    @JoinColumn(name = "page_id",insertable = false,updatable = false,nullable = false)
+    @JoinColumn(name = "page_id", insertable = false, updatable = false, nullable = false)
     private Page page;
     @ManyToOne
-    @JoinColumn(name = "lemma_id",insertable = false,updatable = false,nullable = false)
+    @JoinColumn(name = "lemma_id", insertable = false, updatable = false, nullable = false)
     private Lemma lemma;
 }

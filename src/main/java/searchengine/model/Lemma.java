@@ -8,7 +8,7 @@ import lombok.Setter;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "lemma",uniqueConstraints = @UniqueConstraint(columnNames = "lemma"))
+@Table(name = "lemma", uniqueConstraints = @UniqueConstraint(columnNames = "lemma"))
 @NoArgsConstructor
 @Setter
 @Getter
@@ -26,7 +26,7 @@ public class Lemma {
     @Column(name = "site_id")
     private int siteId;
     @ManyToOne
-    @JoinColumn(name = "site_id",insertable = false,updatable = false,nullable = false)
+    @JoinColumn(name = "site_id", insertable = false, updatable = false, nullable = false)
     private SitePage sitePage;
 
 }

@@ -65,7 +65,6 @@ public class ApiServiceImpl implements ApiService {
             sitePage.setLastError(ex.getMessage());
             siteRepository.save(sitePage);
         }
-
         System.out.println("Проиндексирован сайт: " + siteDomain.getName());
         SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
         sitePage.setStatus(Status.INDEXED);
@@ -91,7 +90,6 @@ public class ApiServiceImpl implements ApiService {
             sitePageDAO.setUrl(siteApp.getUrl().toString());
             siteRepository.save(sitePageDAO);
         }
-
     }
 
     private void indexAllSitePages() throws InterruptedException {

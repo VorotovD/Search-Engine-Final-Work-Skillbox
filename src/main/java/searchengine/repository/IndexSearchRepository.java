@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import searchengine.model.IndexSearch;
 
 @Repository
-public interface IndexSearchRepository extends JpaRepository<IndexSearch,Integer> {
-    @Query(value = "select * from index_search t where t.page_id = :pageId and t.lemma_id = :lemmaId",nativeQuery = true)
-    IndexSearch indexSearchExist(@Param("pageId")Integer pageId,@Param("lemmaId")Integer lemmaId);
+public interface IndexSearchRepository extends JpaRepository<IndexSearch, Integer> {
+    @Query(value = "select * from index_search t where t.page_id = :pageId and t.lemma_id = :lemmaId", nativeQuery = true)
+    IndexSearch indexSearchExist(@Param("pageId") Integer pageId, @Param("lemmaId") Integer lemmaId);
 }

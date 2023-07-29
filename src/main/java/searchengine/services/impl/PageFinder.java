@@ -51,7 +51,6 @@ public class PageFinder extends RecursiveAction {
 
     @Override
     protected void compute() {
-
         if (resultForkJoinPoolIndexedPages.get(page) != null || !indexingProcessing.get()) {
             return;
         }
@@ -138,7 +137,6 @@ public class PageFinder extends RecursiveAction {
         try {
             org.jsoup.Connection connect = Jsoup.connect(siteDomain.getUrl() + page).userAgent(connection.getUserAgent()).referrer(connection.getReferer());
             Document doc = connect.timeout(60000).get();
-
             indexingPage.setContent(doc.head() + String.valueOf(doc.body()));
             indexingPage.setCode(doc.connection().response().statusCode());
         } catch (Exception ex) {
@@ -172,7 +170,7 @@ public class PageFinder extends RecursiveAction {
         sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
         siteRepository.save(sitePage);
 
-        Page pageToRefresh = pageRepository.findPageBySiteIdAndPath(page,sitePage.getId());
+        Page pageToRefresh = pageRepository.findPageBySiteIdAndPath(page, sitePage.getId());
         pageToRefresh.setCode(indexingPage.getCode());
         pageToRefresh.setContent(indexingPage.getContent());
         pageRepository.save(pageToRefresh);

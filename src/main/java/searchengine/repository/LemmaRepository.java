@@ -10,4 +10,7 @@ import searchengine.model.Lemma;
 public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     @Query(value = "select * from lemma t where t.lemma = :lemma for update", nativeQuery = true)
     Lemma lemmaExist(@Param("lemma") String lemma);
+
+    @Query(value = "select count(*) from lemma l where l.site_id = :siteId", nativeQuery = true)
+    Integer findCountRecordBySiteId(@Param("siteId") Integer siteId);
 }

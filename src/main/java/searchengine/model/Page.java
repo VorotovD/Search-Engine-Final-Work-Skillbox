@@ -8,7 +8,7 @@ import lombok.Setter;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "page",indexes = {@Index(name = "path_index",columnList = "path")})
+@Table(name = "page", indexes = {@Index(name = "path_index", columnList = "path")})
 @NoArgsConstructor
 @Setter
 @Getter
@@ -28,6 +28,6 @@ public class Page {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String content;
     @ManyToOne
-    @JoinColumn(name = "site_id",nullable = false,insertable = false,updatable = false)
+    @JoinColumn(name = "site_id", nullable = false, insertable = false, updatable = false)
     private SitePage sitePage;
 }
