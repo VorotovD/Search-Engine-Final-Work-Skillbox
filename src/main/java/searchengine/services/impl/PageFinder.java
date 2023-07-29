@@ -75,31 +75,7 @@ public class PageFinder extends RecursiveAction {
                 }
             indexingPage.setCode(doc.connection().response().statusCode());
         } catch (Exception ex) {
-            String message = ex.toString();
-            int errorCode;
-            if (message.contains("UnsupportedMimeTypeException")) {
-                errorCode = 415;    // Ссылка на pdf, jpg, png документы
-            } else if (message.contains("Status=401")) {
-                errorCode = 401;    // На несуществующий домен
-            } else if (message.contains("UnknownHostException")) {
-                errorCode = 401;
-            } else if (message.contains("Status=403")) {
-                errorCode = 403;    // Нет доступа, 403 Forbidden
-            } else if (message.contains("Status=404")) {
-                errorCode = 404;    // // Ссылка на pdf-документ, несущ. страница, проигрыватель
-            } else if (message.contains("Status=500")) {
-                errorCode = 401;    // Страница авторизации
-            } else if (message.contains("ConnectException: Connection refused")) {
-                errorCode = 500;    // ERR_CONNECTION_REFUSED, не удаётся открыть страницу
-            } else if (message.contains("SSLHandshakeException")) {
-                errorCode = 525;
-            } else if (message.contains("Status=503")) {
-                errorCode = 503; // Сервер временно не имеет возможности обрабатывать запросы по техническим причинам (обслуживание, перегрузка и прочее).
-            } else {
-                errorCode = -1;
-            }
-            indexingPage.setCode(errorCode);
-            return;
+            errorHandling(ex, indexingPage);
         }
         if (resultForkJoinPoolIndexedPages.get(page) != null || !indexingProcessing.get()) {
             return;
@@ -140,31 +116,7 @@ public class PageFinder extends RecursiveAction {
             indexingPage.setContent(doc.head() + String.valueOf(doc.body()));
             indexingPage.setCode(doc.connection().response().statusCode());
         } catch (Exception ex) {
-            String message = ex.toString();
-            int errorCode;
-            if (message.contains("UnsupportedMimeTypeException")) {
-                errorCode = 415;    // Ссылка на pdf, jpg, png документы
-            } else if (message.contains("Status=401")) {
-                errorCode = 401;    // На несуществующий домен
-            } else if (message.contains("UnknownHostException")) {
-                errorCode = 401;
-            } else if (message.contains("Status=403")) {
-                errorCode = 403;    // Нет доступа, 403 Forbidden
-            } else if (message.contains("Status=404")) {
-                errorCode = 404;    // // Ссылка на pdf-документ, несущ. страница, проигрыватель
-            } else if (message.contains("Status=500")) {
-                errorCode = 401;    // Страница авторизации
-            } else if (message.contains("ConnectException: Connection refused")) {
-                errorCode = 500;    // ERR_CONNECTION_REFUSED, не удаётся открыть страницу
-            } else if (message.contains("SSLHandshakeException")) {
-                errorCode = 525;
-            } else if (message.contains("Status=503")) {
-                errorCode = 503; // Сервер временно не имеет возможности обрабатывать запросы по техническим причинам (обслуживание, перегрузка и прочее).
-            } else {
-                errorCode = -1;
-            }
-            indexingPage.setCode(errorCode);
-            return;
+            errorHandling(ex, indexingPage);
         }
         SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
         sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
@@ -176,6 +128,33 @@ public class PageFinder extends RecursiveAction {
         pageRepository.save(pageToRefresh);
 
         pageIndexerService.refreshIndex(indexingPage.getContent(), pageToRefresh);
+    }
+
+    void errorHandling(Exception ex, Page indexingPage) {
+        String message = ex.toString();
+        int errorCode;
+        if (message.contains("UnsupportedMimeTypeException")) {
+            errorCode = 415;    // Ссылка на pdf, jpg, png документы
+        } else if (message.contains("Status=401")) {
+            errorCode = 401;    // На несуществующий домен
+        } else if (message.contains("UnknownHostException")) {
+            errorCode = 401;
+        } else if (message.contains("Status=403")) {
+            errorCode = 403;    // Нет доступа, 403 Forbidden
+        } else if (message.contains("Status=404")) {
+            errorCode = 404;    // // Ссылка на pdf-документ, несущ. страница, проигрыватель
+        } else if (message.contains("Status=500")) {
+            errorCode = 401;    // Страница авторизации
+        } else if (message.contains("ConnectException: Connection refused")) {
+            errorCode = 500;    // ERR_CONNECTION_REFUSED, не удаётся открыть страницу
+        } else if (message.contains("SSLHandshakeException")) {
+            errorCode = 525;
+        } else if (message.contains("Status=503")) {
+            errorCode = 503; // Сервер временно не имеет возможности обрабатывать запросы по техническим причинам (обслуживание, перегрузка и прочее).
+        } else {
+            errorCode = -1;
+        }
+        indexingPage.setCode(errorCode);
     }
 
 }
