@@ -30,7 +30,7 @@ public class PageIndexerServiceImpl implements PageIndexerService {
         try {
             Map<String, Integer> lemmas = lemmaService.getLemmasFromText(html);
             lemmas.entrySet().parallelStream().forEach(entry -> saveLemma(entry.getKey(), entry.getValue(), indexingPage));
-            log.warn("Индексация страницы " + (System.currentTimeMillis() - start) + " lemmas:" + lemmas.size());
+            log.debug("Индексация страницы " + (System.currentTimeMillis() - start) + " lemmas:" + lemmas.size());
         } catch (IOException e) {
             log.error(String.valueOf(e));
             throw new RuntimeException(e);
@@ -43,7 +43,7 @@ public class PageIndexerServiceImpl implements PageIndexerService {
         try {
             Map<String, Integer> lemmas = lemmaService.getLemmasFromText(html);
             lemmas.entrySet().parallelStream().forEach(entry -> refreshLemma(entry.getKey(), entry.getValue(), refreshPage));
-            log.warn("Обновление индекса страницы " + (System.currentTimeMillis() - start) + " lemmas:" + lemmas.size());
+            log.debug("Обновление индекса страницы " + (System.currentTimeMillis() - start) + " lemmas:" + lemmas.size());
         } catch (IOException e) {
             log.error(String.valueOf(e));
             throw new RuntimeException(e);
@@ -95,7 +95,7 @@ public class PageIndexerServiceImpl implements PageIndexerService {
                 lemmaRepository.saveAndFlush(newLemmaToDB);
                 createIndex(indexingPage, newLemmaToDB, v);
             } catch (DataIntegrityViolationException ex) {
-                log.error("Ошибка при сохранении леммы, такая лемма уже существует. Вызов повторного сохранения");
+                log.debug("Ошибка при сохранении леммы, такая лемма уже существует. Вызов повторного сохранения");
                 saveLemma(k, v, indexingPage);
             }
         }

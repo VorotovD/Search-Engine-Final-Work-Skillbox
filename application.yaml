@@ -9,6 +9,11 @@ spring:
     generate-ddl: true
     show-sql: false
 
+logging:
+  level:
+    org.springframework: ERROR
+    searchengine: INFO
+
 
 indexing-settings:
   sites:

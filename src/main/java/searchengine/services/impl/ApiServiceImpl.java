@@ -1,8 +1,7 @@
 package searchengine.services.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import searchengine.config.Connection;
 import searchengine.config.Site;
@@ -26,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ApiServiceImpl implements ApiService {
     private final PageIndexerService pageIndexerService;
     private final LemmaService lemmaService;
@@ -34,7 +34,6 @@ public class ApiServiceImpl implements ApiService {
     private final SitesList sitesToIndexing;
     private final Set<SitePage> sitePagesAllFromDB;
     private final Connection connection;
-    private static final Logger logger = LoggerFactory.getLogger(ApiServiceImpl.class);
     private AtomicBoolean indexingProcessing;
 
 
@@ -46,7 +45,7 @@ public class ApiServiceImpl implements ApiService {
             addSitePagesToDB();
             indexAllSitePages();
         } catch (RuntimeException | InterruptedException ex) {
-            logger.error("Error: ", ex);
+            log.error("Error: ", ex);
         }
     }
 
@@ -56,7 +55,7 @@ public class ApiServiceImpl implements ApiService {
         siteDomain.setId(existSitePate.getId());
         ConcurrentHashMap<String, Page> resultForkJoinPageIndexer = new ConcurrentHashMap<>();
         try {
-            System.out.println("Запущена переиндексация " + url.getHost());
+            log.info("Запущена переиндексация " + url.getHost());
             PageFinder f = new PageFinder(siteRepository, pageRepository, siteDomain, url.getPath(), resultForkJoinPageIndexer, connection, lemmaService, pageIndexerService, indexingProcessing);
             f.refreshPage();
         } catch (SecurityException ex) {
@@ -65,7 +64,7 @@ public class ApiServiceImpl implements ApiService {
             sitePage.setLastError(ex.getMessage());
             siteRepository.save(sitePage);
         }
-        System.out.println("Проиндексирован сайт: " + siteDomain.getName());
+        log.info("Проиндексирован сайт: " + siteDomain.getName());
         SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
         sitePage.setStatus(Status.INDEXED);
         siteRepository.save(sitePage);
@@ -105,7 +104,7 @@ public class ApiServiceImpl implements ApiService {
             Runnable indexSite = () -> {
                 ConcurrentHashMap<String, Page> resultForkJoinPageIndexer = new ConcurrentHashMap<>();
                 try {
-                    System.out.println("Запущена индексация " + siteDomain.getUrl());
+                    log.info("Запущена индексация " + siteDomain.getUrl());
                     new ForkJoinPool().invoke(new PageFinder(siteRepository, pageRepository, siteDomain, "", resultForkJoinPageIndexer, connection, lemmaService, pageIndexerService, indexingProcessing));
                 } catch (SecurityException ex) {
                     SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
@@ -114,12 +113,13 @@ public class ApiServiceImpl implements ApiService {
                     siteRepository.save(sitePage);
                 }
                 if (!indexingProcessing.get()) {
+                    log.warn("Indexing stopped by user, site:" + siteDomain);
                     SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
                     sitePage.setStatus(Status.FAILED);
                     sitePage.setLastError("Indexing stopped by user");
                     siteRepository.save(sitePage);
                 } else {
-                    System.out.println("Проиндексирован сайт: " + siteDomain.getName());
+                    log.info("Проиндексирован сайт: " + siteDomain.getName());
                     SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
                     sitePage.setStatus(Status.INDEXED);
                     siteRepository.save(sitePage);

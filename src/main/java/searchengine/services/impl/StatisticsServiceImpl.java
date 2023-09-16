@@ -38,7 +38,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         total.setSites(sites.getSites().size());
         total.setIndexing(true);
 
-        List<DetailedStatisticsItem> detailed = new ArrayList<>();
+           List<DetailedStatisticsItem> detailed = new ArrayList<>();
         List<SitePage> sites = siteRepository.findAll();
         for (SitePage sitePage : sites) {
             Site site = new Site();

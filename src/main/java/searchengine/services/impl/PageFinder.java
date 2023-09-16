@@ -57,8 +57,7 @@ public class PageFinder extends RecursiveAction {
         Page indexingPage = new Page();
         indexingPage.setPath(page);
         indexingPage.setSiteId(siteDomain.getId());
-        //Если блочат подключение, используй ->
-        //Thread.sleep(1000);
+
         try {
             org.jsoup.Connection connect = Jsoup.connect(siteDomain.getUrl() + page).userAgent(connection.getUserAgent()).referrer(connection.getReferer());
             Document doc = connect.timeout(60000).get();
@@ -108,8 +107,7 @@ public class PageFinder extends RecursiveAction {
         Page indexingPage = new Page();
         indexingPage.setPath(page);
         indexingPage.setSiteId(siteDomain.getId());
-        //Если блочат подключение, используй ->
-        //Thread.sleep(1000);
+
         try {
             org.jsoup.Connection connect = Jsoup.connect(siteDomain.getUrl() + page).userAgent(connection.getUserAgent()).referrer(connection.getReferer());
             Document doc = connect.timeout(60000).get();
