@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import searchengine.config.SitesList;
+import searchengine.dto.NotOkResponse;
+import searchengine.dto.OkResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.SitePage;
 import searchengine.services.ApiService;
@@ -39,30 +41,28 @@ public class ApiController {
     @GetMapping("/startIndexing")
     public ResponseEntity startIndexing() {
         if (indexingProcessing.get()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("'result' : false, " +
-                    "'error' : Индексация уже запущена");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new NotOkResponse("Индексация уже запущена"));
         } else {
             executor.submit(() -> {
                 indexingProcessing.set(true);
                 apiService.startIndexing(indexingProcessing);
             });
-            return ResponseEntity.status(HttpStatus.OK).body("'result' : true");
+            return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
         }
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity stopIndexing() {
         if (!indexingProcessing.get()) {
-            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body("'result' : false, " +
-                    "'error' : Индексация не запущена");
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(new NotOkResponse("Индексация не запущена"));
         } else {
             indexingProcessing.set(false);
-            return ResponseEntity.status(HttpStatus.OK).body("'result' : true ");
+            return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
         }
     }
 
     @GetMapping("/indexPage")
-    public ResponseEntity<String> indexPage(@RequestParam String refUrl) throws IOException {
+    public ResponseEntity indexPage(@RequestParam String refUrl) throws IOException {
         URL url = new URL(refUrl);
         SitePage sitePage = new SitePage();
         try {
@@ -72,11 +72,10 @@ public class ApiController {
                 return sitePage;
             }).orElseThrow();
         } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("result: false " +
-                    "error: Данная страница находится за пределами сайтов " +
-                    "указанных в конфигурационном файле");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).
+                    body(new NotOkResponse("Данная страница находится за пределами сайтов указанных в конфигурационном файле"));
         }
         apiService.refreshPage(sitePage, url);
-        return ResponseEntity.status(HttpStatus.OK).body("'result' : true ");
+        return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
     }
 }
