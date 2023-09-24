@@ -23,6 +23,7 @@ public class IndexSearch {
     @NotNull
     @Column(name = "lemma_id")
     private int lemmaId;
+    @Column(name = "lemma_rank")
     @NotNull
     private int lemmaCount;
     @ManyToOne

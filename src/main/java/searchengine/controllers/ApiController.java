@@ -8,11 +8,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import searchengine.config.SitesList;
-import searchengine.dto.NotOkResponse;
-import searchengine.dto.OkResponse;
+import searchengine.dto.responses.NotOkResponse;
+import searchengine.dto.responses.OkResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.SitePage;
 import searchengine.services.ApiService;
+import searchengine.services.SearchService;
 import searchengine.services.StatisticsService;
 
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class ApiController {
-
+    private final SearchService searchService;
     private final StatisticsService statisticsService;
     private final ApiService apiService;
     private final AtomicBoolean indexingProcessing = new AtomicBoolean(false);
@@ -77,5 +78,18 @@ public class ApiController {
         }
         apiService.refreshPage(sitePage, url);
         return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Object> search(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String site,
+            @RequestParam(required = false, defaultValue = "0") Integer offset,
+            @RequestParam(required = false, defaultValue = "20") Integer limit
+                       ) throws IOException {
+        if (query == null || query.isBlank()) {
+            return ResponseEntity.badRequest().body(new NotOkResponse("Задан пустой поисковый запрос"));
+        }
+        return searchService.search(query,site,offset,limit);
     }
 }

@@ -30,4 +30,13 @@ public class Page {
     @ManyToOne
     @JoinColumn(name = "site_id", nullable = false, insertable = false, updatable = false)
     private SitePage sitePage;
+
+    public Page(Page page) {
+        this.id = page.getId();
+        this.siteId = page.getSiteId();
+        this.path = page.getPath();
+        this.code = page.getCode();
+        this.content = page.getContent();
+        this.sitePage = page.getSitePage();
+    }
 }
