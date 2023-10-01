@@ -3,10 +3,7 @@ package searchengine.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import searchengine.config.SitesList;
 import searchengine.dto.responses.NotOkResponse;
 import searchengine.dto.responses.OkResponse;
@@ -62,12 +59,12 @@ public class ApiController {
         }
     }
 
-    @GetMapping("/indexPage")
-    public ResponseEntity indexPage(@RequestParam String refUrl) throws IOException {
-        URL url = new URL(refUrl);
+    @PostMapping("/indexPage")
+    public ResponseEntity indexPage(@RequestParam String url) throws IOException {
+        URL refUrl = new URL(url);
         SitePage sitePage = new SitePage();
         try {
-            sitesList.getSites().stream().filter(site -> url.getHost().equals(site.getUrl().getHost())).findFirst().map(site -> {
+            sitesList.getSites().stream().filter(site -> refUrl.getHost().equals(site.getUrl().getHost())).findFirst().map(site -> {
                 sitePage.setName(site.getName());
                 sitePage.setUrl(site.getUrl().toString());
                 return sitePage;
@@ -76,7 +73,7 @@ public class ApiController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).
                     body(new NotOkResponse("Данная страница находится за пределами сайтов указанных в конфигурационном файле"));
         }
-        apiService.refreshPage(sitePage, url);
+        apiService.refreshPage(sitePage, refUrl);
         return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
     }
 
@@ -86,10 +83,10 @@ public class ApiController {
             @RequestParam(required = false) String site,
             @RequestParam(required = false, defaultValue = "0") Integer offset,
             @RequestParam(required = false, defaultValue = "20") Integer limit
-                       ) throws IOException {
+    ) throws IOException {
         if (query == null || query.isBlank()) {
             return ResponseEntity.badRequest().body(new NotOkResponse("Задан пустой поисковый запрос"));
         }
-        return searchService.search(query,site,offset,limit);
+        return searchService.search(query, site, offset, limit);
     }
 }

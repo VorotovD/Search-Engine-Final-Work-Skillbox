@@ -4,6 +4,8 @@ import com.sun.istack.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 
@@ -26,10 +28,12 @@ public class IndexSearch {
     @Column(name = "lemma_rank")
     @NotNull
     private int lemmaCount;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.REMOVE)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "page_id", insertable = false, updatable = false, nullable = false)
     private Page page;
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "lemma_id", insertable = false, updatable = false, nullable = false)
     private Lemma lemma;
 }

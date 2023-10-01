@@ -45,6 +45,7 @@ public class ApiServiceImpl implements ApiService {
             addSitePagesToDB();
             indexAllSitePages();
         } catch (RuntimeException | InterruptedException ex) {
+            indexingProcessing.set(false);
             log.error("Error: ", ex);
         }
     }
@@ -74,7 +75,7 @@ public class ApiServiceImpl implements ApiService {
         List<SitePage> sitesFromDB = siteRepository.findAll();
         for (SitePage sitePageDb : sitesFromDB) {
             for (Site siteApp : sitesToIndexing.getSites()) {
-                if (sitePageDb.getUrl().equals(siteApp.getUrl())) {
+                if (sitePageDb.getUrl().equals(siteApp.getUrl().toString())) {
                     siteRepository.deleteById(sitePageDb.getId());
                 }
             }

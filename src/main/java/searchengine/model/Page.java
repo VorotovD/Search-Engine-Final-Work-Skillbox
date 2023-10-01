@@ -27,7 +27,7 @@ public class Page {
     @NotNull
     @Column(columnDefinition = "MEDIUMTEXT")
     private String content;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.REMOVE)
     @JoinColumn(name = "site_id", nullable = false, insertable = false, updatable = false)
     private SitePage sitePage;
 

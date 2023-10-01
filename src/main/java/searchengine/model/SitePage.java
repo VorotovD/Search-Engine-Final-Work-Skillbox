@@ -32,10 +32,10 @@ public class SitePage {
     @NotNull
     @Column(columnDefinition = "VARCHAR(255)")
     private String name;
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(orphanRemoval = true)
     @JoinColumn(name = "site_id")
     private List<Page> pages;
-    @OneToMany
+    @OneToMany(orphanRemoval = true)
     @JoinColumn(name = "site_id")
     private List<Lemma> lemmas;
 }

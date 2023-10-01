@@ -4,6 +4,8 @@ import com.sun.istack.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 
@@ -25,7 +27,8 @@ public class Lemma {
     @NotNull
     @Column(name = "site_id")
     private int siteId;
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.REMOVE)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "site_id", insertable = false, updatable = false, nullable = false)
     private SitePage sitePage;
 
