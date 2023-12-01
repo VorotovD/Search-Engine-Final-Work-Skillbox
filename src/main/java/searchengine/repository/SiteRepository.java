@@ -10,5 +10,4 @@ import searchengine.model.SitePage;
 public interface SiteRepository extends JpaRepository<SitePage, Integer> {
     @Query(value = "select * from site s where s.url = :host limit 1", nativeQuery = true)
     SitePage getSitePageByUrl(@Param("host") String host);
-
 }

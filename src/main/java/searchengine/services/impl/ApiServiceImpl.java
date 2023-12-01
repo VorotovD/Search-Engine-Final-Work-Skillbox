@@ -56,7 +56,7 @@ public class ApiServiceImpl implements ApiService {
         siteDomain.setId(existSitePate.getId());
         ConcurrentHashMap<String, Page> resultForkJoinPageIndexer = new ConcurrentHashMap<>();
         try {
-            log.info("Запущена переиндексация " + url.getHost());
+            log.info("Запущена переиндексация страницы:" + url.toString());
             PageFinder f = new PageFinder(siteRepository, pageRepository, siteDomain, url.getPath(), resultForkJoinPageIndexer, connection, lemmaService, pageIndexerService, indexingProcessing);
             f.refreshPage();
         } catch (SecurityException ex) {

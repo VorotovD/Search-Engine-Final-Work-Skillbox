@@ -13,6 +13,7 @@ import searchengine.repository.SiteRepository;
 import searchengine.services.LemmaService;
 import searchengine.services.PageIndexerService;
 
+import java.io.*;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -121,11 +122,15 @@ public class PageFinder extends RecursiveAction {
         siteRepository.save(sitePage);
 
         Page pageToRefresh = pageRepository.findPageBySiteIdAndPath(page, sitePage.getId());
-        pageToRefresh.setCode(indexingPage.getCode());
-        pageToRefresh.setContent(indexingPage.getContent());
-        pageRepository.save(pageToRefresh);
-
-        pageIndexerService.refreshIndex(indexingPage.getContent(), pageToRefresh);
+        if (pageToRefresh != null) {
+            pageToRefresh.setCode(indexingPage.getCode());
+            pageToRefresh.setContent(indexingPage.getContent());
+            pageRepository.save(pageToRefresh);
+            pageIndexerService.refreshIndex(indexingPage.getContent(), pageToRefresh);
+        } else {
+            pageRepository.save(indexingPage);
+            pageIndexerService.refreshIndex(indexingPage.getContent(), indexingPage);
+        }
     }
 
     void errorHandling(Exception ex, Page indexingPage) {
