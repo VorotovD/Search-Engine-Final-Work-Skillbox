@@ -114,13 +114,13 @@ public class ApiServiceImpl implements ApiService {
                     siteRepository.save(sitePage);
                 }
                 if (!indexingProcessing.get()) {
-                    log.warn("Indexing stopped by user, site:" + siteDomain);
+                    log.warn("Indexing stopped by user, site:" + siteDomain.getUrl());
                     SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
                     sitePage.setStatus(Status.FAILED);
                     sitePage.setLastError("Indexing stopped by user");
                     siteRepository.save(sitePage);
                 } else {
-                    log.info("Проиндексирован сайт: " + siteDomain.getName());
+                    log.info("Проиндексирован сайт: " + siteDomain.getUrl());
                     SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
                     sitePage.setStatus(Status.INDEXED);
                     siteRepository.save(sitePage);

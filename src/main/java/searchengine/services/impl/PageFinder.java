@@ -64,6 +64,9 @@ public class PageFinder extends RecursiveAction {
             Document doc = connect.timeout(60000).get();
 
             indexingPage.setContent(doc.head() + String.valueOf(doc.body()));
+            if (indexingPage.getContent() == null || indexingPage.getContent().isEmpty() || indexingPage.getContent().isBlank()) {
+                throw new Exception("Content of site id:" + indexingPage.getSiteId() + ", page:" + indexingPage.getPath() + " is null or empty");
+            }
             Elements pages = doc.getElementsByTag("a");
             for (org.jsoup.nodes.Element element : pages)
                 if (!element.attr("href").isEmpty() && element.attr("href").charAt(0) == '/') {
@@ -75,7 +78,13 @@ public class PageFinder extends RecursiveAction {
                 }
             indexingPage.setCode(doc.connection().response().statusCode());
         } catch (Exception ex) {
-            errorHandling(ex, indexingPage);
+            errorHandling(ex, indexingPage);resultForkJoinPoolIndexedPages.putIfAbsent(indexingPage.getPath(), indexingPage);
+            SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
+            sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
+            siteRepository.save(sitePage);
+            pageRepository.save(indexingPage);
+            log.debug("ERROR INDEXATION, siteId:" + indexingPage.getSiteId() + ", path:" + indexingPage.getPath() + ",code:" + indexingPage.getCode() + ", error:" + ex.getMessage());
+            return;
         }
         if (resultForkJoinPoolIndexedPages.get(page) != null || !indexingProcessing.get()) {
             return;
@@ -114,8 +123,16 @@ public class PageFinder extends RecursiveAction {
             Document doc = connect.timeout(60000).get();
             indexingPage.setContent(doc.head() + String.valueOf(doc.body()));
             indexingPage.setCode(doc.connection().response().statusCode());
+            if (indexingPage.getContent() == null || indexingPage.getContent().isEmpty() || indexingPage.getContent().isBlank()) {
+                throw new Exception("Content of site id:" + indexingPage.getSiteId() + ", page:" + indexingPage.getPath() + " is null or empty");
+            }
         } catch (Exception ex) {
             errorHandling(ex, indexingPage);
+            SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
+            sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
+            siteRepository.save(sitePage);
+            pageRepository.save(indexingPage);
+            return;
         }
         SitePage sitePage = siteRepository.findById(siteDomain.getId()).orElseThrow();
         sitePage.setStatusTime(Timestamp.valueOf(LocalDateTime.now()));
@@ -159,5 +176,4 @@ public class PageFinder extends RecursiveAction {
         }
         indexingPage.setCode(errorCode);
     }
-
 }

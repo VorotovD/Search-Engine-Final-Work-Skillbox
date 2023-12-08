@@ -35,7 +35,7 @@ public class SearchServiceImpl implements SearchService {
     private final LemmaRepository lemmaRepository;
     private final IndexSearchRepository indexRepository;
     private final LemmaService lemmaService;
-    private final Status indexInProgressStatus = Status.INDEXING;
+    private final Status indexSuccessStatus = Status.INDEXED;
     private final double frequencyLimitProportion = 100;
 
     @Override
@@ -56,11 +56,14 @@ public class SearchServiceImpl implements SearchService {
             return ((double) lemmaFrequency / countPages > frequencyLimitProportion);
         });
 
+        if (lemmasForSearch.isEmpty()) {
+            return ResponseEntity.badRequest().body(new NotOkResponse("Нет ни одного совпадения по заданному поисковому запросу."));
+        }
+
         //Sorting lemmas by frequent
-        List<Map.Entry<Integer, String>> lemmasFrequencyToSearch = lemmasForSearch.
+        List<AbstractMap.SimpleEntry<Integer, String>> lemmasFrequencyToSearch = lemmasForSearch.
                 stream().
-                map(l -> new AbstractMap.SimpleEntry<>(lemmaRepository.findCountPageByLemma(l), l)).
-                collect(Collectors.toList());
+                map(l -> new AbstractMap.SimpleEntry<>(lemmaRepository.findCountPageByLemma(l), l)).toList();
         List<String> sortedLemmasToSearch = lemmasFrequencyToSearch.
                 stream().
                 sorted(Comparator.comparingInt(Map.Entry::getKey)).
@@ -151,8 +154,8 @@ public class SearchServiceImpl implements SearchService {
     private Boolean checkIndexStatusNotIndexed(String site) {
         if (site == null || site.isBlank()) {
             List<SitePage> sites = siteRepository.findAll();
-            return sites.stream().anyMatch(s -> s.getStatus().equals(indexInProgressStatus));
+            return sites.stream().anyMatch(s -> !s.getStatus().equals(indexSuccessStatus));
         }
-        return siteRepository.getSitePageByUrl(site).getStatus().equals(indexInProgressStatus);
+        return !siteRepository.getSitePageByUrl(site).getStatus().equals(indexSuccessStatus);
     }
 }
