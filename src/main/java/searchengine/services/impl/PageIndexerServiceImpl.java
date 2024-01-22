@@ -71,7 +71,7 @@ public class PageIndexerServiceImpl implements PageIndexerService {
 
     @Transactional
     private void saveLemma(String k, Integer v, Page indexingPage) {
-        Lemma existLemmaInDB = lemmaRepository.lemmaExist(k);
+        Lemma existLemmaInDB = lemmaRepository.lemmaExist(k, indexingPage.getSiteId());
         if (existLemmaInDB != null) {
             existLemmaInDB.setFrequency(existLemmaInDB.getFrequency() + v);
             lemmaRepository.saveAndFlush(existLemmaInDB);

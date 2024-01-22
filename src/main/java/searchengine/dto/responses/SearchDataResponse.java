@@ -1,5 +1,6 @@
 package searchengine.dto.responses;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,4 +15,6 @@ public class SearchDataResponse {
     private String title;
     private String snippet;
     private Double relevance;
+    @JsonIgnore
+    private int wordsFound;
 }
